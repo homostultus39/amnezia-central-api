@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from alembic import command
 from alembic.config import Config
 
@@ -7,6 +7,11 @@ from src.management.logger import configure_logger
 from src.redis.connection import connect_redis, disconnect_redis
 from src.minio.connection import connect_minio, disconnect_minio
 from src.database.management.default.admin_data import create_default_admin_user
+from src.api.v1.auth.router import router as auth_router
+from src.api.v1.clients.router import router as clients_router
+from src.api.v1.clusters.router import router as clusters_router
+from src.api.v1.peers.router import router as peers_router
+from src.api.v1.deps.middlewares.auth import get_current_admin
 
 
 logger = configure_logger("MAIN", "cyan")
@@ -47,6 +52,34 @@ app = FastAPI(
     lifespan=lifespan,
     root_path="/api/v1",
     swagger_ui_parameters={"persistAuthorization": True},
+)
+
+# Include routers
+app.include_router(
+    auth_router,
+    prefix="/auth",
+    tags=["Auth"]
+)
+
+app.include_router(
+    clients_router,
+    prefix="/clients",
+    tags=["Clients"],
+    dependencies=[Depends(get_current_admin)]
+)
+
+app.include_router(
+    clusters_router,
+    prefix="/clusters",
+    tags=["Clusters"],
+    dependencies=[Depends(get_current_admin)]
+)
+
+app.include_router(
+    peers_router,
+    prefix="/peers",
+    tags=["Peers"],
+    dependencies=[Depends(get_current_admin)]
 )
 
 
