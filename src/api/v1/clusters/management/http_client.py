@@ -1,3 +1,4 @@
+import uuid
 import httpx
 from typing import Any
 
@@ -11,7 +12,8 @@ settings = get_settings()
 
 class ClusterAPIClient:
     def __init__(self, endpoint: str, api_key: str, timeout: int | None = None):
-        self.endpoint = endpoint.rstrip("/")
+        self.protocol = "http" if settings.development else "http"
+        self.endpoint = f"{self.protocol}://{endpoint.rstrip('/')}"
         self.api_key = api_key
         self.timeout = timeout if timeout is not None else settings.cluster_api_timeout
         self.headers = {"X-API-Key": api_key}
@@ -98,7 +100,7 @@ class ClusterAPIClient:
             logger.error(f"Error recreating peer on {self.endpoint}: {e}")
             raise ClusterAPIException(f"Failed to recreate peer: {str(e)}")
 
-    async def delete_peer(self, peer_id: str) -> dict[str, Any]:
+    async def delete_peer(self, peer_id: uuid.UUID) -> dict[str, Any]:
         url = f"{self.endpoint}/api/v1/peers/{peer_id}"
 
         try:
@@ -117,7 +119,7 @@ class ClusterAPIClient:
             logger.error(f"Error deleting peer on {self.endpoint}: {e}")
             raise ClusterAPIException(f"Failed to delete peer: {str(e)}")
 
-    async def get_peer(self, peer_id: str) -> dict[str, Any]:
+    async def get_peer(self, peer_id: uuid.UUID) -> dict[str, Any]:
         url = f"{self.endpoint}/api/v1/peers/{peer_id}"
 
         try:

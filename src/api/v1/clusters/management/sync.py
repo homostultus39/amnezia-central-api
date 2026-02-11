@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Header, HTTPException, status
 from datetime import datetime, timezone
 
@@ -15,7 +17,7 @@ cache = ClusterStatusCache()
 @router.post("/{cluster_id}/sync", response_model=ClusterSyncResponse)
 async def sync_cluster(
     session: SessionDep,
-    cluster_id: str,
+    cluster_id: UUID,
     payload: ClusterSyncRequest,
     x_api_key: str = Header(...),
 ) -> ClusterSyncResponse:
@@ -31,7 +33,8 @@ async def sync_cluster(
 
         await update_last_handshake(session, cluster_id)
 
-        await cache.save_protocol(cluster_id, payload.protocol)
+        cluster_id_str = str(cluster_id)
+        await cache.save_protocol(cluster_id_str, payload.protocol)
 
         traffic_data = {
             "total_rx_bytes": payload.server_traffic.total_rx_bytes,
@@ -39,7 +42,7 @@ async def sync_cluster(
             "total_peers": payload.server_traffic.total_peers,
             "online_peers": payload.server_traffic.online_peers,
         }
-        await cache.save_traffic(cluster_id, traffic_data)
+        await cache.save_traffic(cluster_id_str, traffic_data)
 
         for peer in payload.peers:
             peer_data = {
@@ -52,7 +55,7 @@ async def sync_cluster(
                 "online": peer.online,
                 "persistent_keepalive": peer.persistent_keepalive,
             }
-            await cache.save_peer_status(cluster_id, peer.public_key, peer_data)
+            await cache.save_peer_status(cluster_id_str, peer.public_key, peer_data)
 
         logger.info(
             f"Synced cluster {cluster.name}: {payload.server_traffic.total_peers} peers, "

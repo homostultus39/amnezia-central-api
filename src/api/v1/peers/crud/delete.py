@@ -23,7 +23,7 @@ async def delete_peer_endpoint(
 
         try:
             cluster_client = ClusterAPIClient(peer.cluster.endpoint, peer.cluster.api_key)
-            await cluster_client.delete_peer(str(peer_id))
+            await cluster_client.delete_peer(peer_id)
             logger.info(f"Peer deleted from cluster: {peer.cluster.name}")
         except Exception as e:
             logger.error(f"Failed to delete peer from cluster: {e}")

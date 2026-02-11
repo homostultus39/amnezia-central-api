@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -12,7 +13,7 @@ class UpdateClientRequest(BaseModel):
 
 
 class ClientResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     username: str
     expires_at: datetime
     created_at: datetime

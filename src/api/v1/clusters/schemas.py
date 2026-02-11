@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -41,7 +42,7 @@ class ClusterSyncRequest(BaseModel):
 
 
 class ClusterResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     endpoint: str
     is_active: bool
@@ -62,7 +63,7 @@ class ClusterWithStatusResponse(ClusterResponse):
 
 
 class RestartClusterResponse(BaseModel):
-    cluster_id: str
+    cluster_id: uuid.UUID
     status: str
     message: str
 

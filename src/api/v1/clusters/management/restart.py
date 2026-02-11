@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, status
 
 from src.database.connection import SessionDep
@@ -13,7 +15,7 @@ router = APIRouter()
 @router.post("/{cluster_id}/restart", response_model=RestartClusterResponse)
 async def restart_cluster(
     session: SessionDep,
-    cluster_id: str,
+    cluster_id: UUID,
 ) -> RestartClusterResponse:
     try:
         cluster = await get_cluster_by_id(session, cluster_id)

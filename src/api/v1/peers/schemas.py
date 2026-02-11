@@ -1,10 +1,11 @@
+import uuid
 from pydantic import BaseModel
 from datetime import datetime
 
 
 class CreatePeerRequest(BaseModel):
-    cluster_id: str
-    client_id: str
+    cluster_id: uuid.UUID
+    client_id: uuid.UUID
     app_type: str
     protocol: str
 
@@ -23,9 +24,9 @@ class UpdatePeerRequest(BaseModel):
 
 
 class PeerResponse(BaseModel):
-    id: str
-    client_id: str
-    cluster_id: str
+    id: uuid.UUID
+    client_id: uuid.UUID
+    cluster_id: uuid.UUID
     public_key: str
     allocated_ip: str
     endpoint: str
