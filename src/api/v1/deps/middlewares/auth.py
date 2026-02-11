@@ -21,7 +21,6 @@ async def get_current_admin(
     token = credentials.credentials
     redis_client = RedisClient()
 
-    # Check if token is blacklisted
     if await redis_client.is_token_blacklisted(token):
         raise InvalidTokenException()
 

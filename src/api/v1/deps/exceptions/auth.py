@@ -2,7 +2,6 @@ from fastapi import HTTPException, status
 
 
 class InvalidTokenException(HTTPException):
-    """Invalid or expired token exception."""
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -12,7 +11,6 @@ class InvalidTokenException(HTTPException):
 
 
 class TokenNotProvidedException(HTTPException):
-    """Token not provided exception."""
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -22,7 +20,6 @@ class TokenNotProvidedException(HTTPException):
 
 
 class InvalidCredentialsException(HTTPException):
-    """Invalid credentials exception."""
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,52 +1,99 @@
-from io import BytesIO
+import asyncio
+import io
 from datetime import timedelta
-from urllib.parse import quote
+from typing import Optional
 
-from src.minio.connection import get_minio
+from minio.error import S3Error
+
+from src.management.logger import configure_logger
 from src.management.settings import get_settings
-
+from src.minio.connection import get_minio_client, get_minio_public_client
 
 settings = get_settings()
+logger = configure_logger("MinioClient", "cyan")
 
 
-def _get_object_name(client_id: str) -> str:
-    """Generate escaped object name for MinIO."""
-    escaped_id = quote(str(client_id), safe="")
-    return f"configs/{escaped_id}.conf"
+class MinioClient:
+    def __init__(self) -> None:
+        self._client = get_minio_client()
+        self._public_client = get_minio_public_client()
+        self._bucket_ready = False
+        self.bucket_name = settings.minio_bucket
 
+    async def _run(self, func, *args, **kwargs):
+        return await asyncio.to_thread(func, *args, **kwargs)
 
-async def upload_config(client_id: str, config_data: bytes) -> str:
-    """Upload config to MinIO and return path."""
-    minio = await get_minio()
-    object_name = _get_object_name(client_id)
+    async def _ensure_bucket(self) -> None:
+        if self._bucket_ready:
+            return
+        exists = await self._run(self._client.bucket_exists, self.bucket_name)
+        if not exists:
+            await self._run(self._client.make_bucket, self.bucket_name)
+        self._bucket_ready = True
 
-    minio.put_object(
-        settings.minio_bucket,
-        object_name,
-        BytesIO(config_data),
-        length=len(config_data),
-        content_type="application/octet-stream"
-    )
+    async def upload_text(
+        self,
+        object_name: str,
+        content: str,
+        content_type: str = "text/plain",
+    ) -> None:
+        await self._ensure_bucket()
+        data = content.encode()
+        await self._run(
+            self._client.put_object,
+            self.bucket_name,
+            object_name,
+            io.BytesIO(data),
+            length=len(data),
+            content_type=content_type,
+        )
+        logger.info(f"Text object '{object_name}' uploaded to '{self.bucket_name}'")
 
-    return object_name
+    async def upload_bytes(
+        self,
+        object_name: str,
+        content: bytes,
+        content_type: str = "application/octet-stream",
+    ) -> None:
+        await self._ensure_bucket()
+        await self._run(
+            self._client.put_object,
+            self.bucket_name,
+            object_name,
+            io.BytesIO(content),
+            length=len(content),
+            content_type=content_type,
+        )
+        logger.info(f"Bytes object '{object_name}' uploaded to '{self.bucket_name}'")
 
+    async def delete_object(self, object_name: str) -> None:
+        await self._ensure_bucket()
+        await self._run(self._client.remove_object, self.bucket_name, object_name)
+        logger.info(f"Object '{object_name}' deleted from '{self.bucket_name}'")
 
-async def get_config_download_url(client_id: str) -> str:
-    """Generate presigned URL for config download."""
-    minio = await get_minio()
-    object_name = _get_object_name(client_id)
+    async def presigned_get_url(
+        self,
+        object_name: str,
+        expires_seconds: Optional[int] = None,
+    ) -> str:
+        await self._ensure_bucket()
+        expires = timedelta(
+            seconds=expires_seconds or settings.minio_presigned_expires_seconds
+        )
 
-    url = minio.get_presigned_download_url(
-        settings.minio_bucket,
-        object_name,
-        expires=timedelta(seconds=settings.minio_presigned_expires_seconds)
-    )
+        presigned_url = await self._run(
+            self._public_client.presigned_get_object,
+            self.bucket_name,
+            object_name,
+            expires=expires,
+        )
 
-    return url.replace(settings.minio_internal_host, settings.minio_public_host)
+        logger.debug(f"Generated presigned URL for '{object_name}'")
+        return presigned_url
 
-
-async def delete_config(client_id: str) -> None:
-    """Delete config from MinIO."""
-    minio = await get_minio()
-    object_name = _get_object_name(client_id)
-    minio.remove_object(settings.minio_bucket, object_name)
+    async def is_available(self) -> bool:
+        try:
+            await self._ensure_bucket()
+        except S3Error:
+            return False
+        return True

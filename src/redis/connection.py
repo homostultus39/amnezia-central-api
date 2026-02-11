@@ -2,27 +2,17 @@ import redis.asyncio as redis
 
 from src.management.settings import get_settings
 
-
 settings = get_settings()
 
-redis_client = None
+_redis_client: redis.Redis | None = None
 
 
-async def connect_redis():
-    global redis_client
-    redis_client = await redis.from_url(
-        f"redis://:{settings.redis_password}@{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
-        encoding="utf8",
-        decode_responses=True
-    )
-    return redis_client
-
-
-async def disconnect_redis():
-    global redis_client
-    if redis_client:
-        await redis_client.close()
-
-
-async def get_redis():
-    return redis_client
+async def get_redis() -> redis.Redis:
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = await redis.from_url(
+            f"redis://:{settings.redis_password}@{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
+            encoding="utf8",
+            decode_responses=True
+        )
+    return _redis_client

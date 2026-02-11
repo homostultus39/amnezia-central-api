@@ -4,17 +4,18 @@ from alembic import command
 from alembic.config import Config
 
 from src.management.logger import configure_logger
-from src.redis.connection import connect_redis, disconnect_redis
-from src.minio.connection import connect_minio, disconnect_minio
 from src.database.management.default.admin_data import create_default_admin_user
 from src.api.v1.auth.router import router as auth_router
 from src.api.v1.clients.router import router as clients_router
 from src.api.v1.clusters.router import router as clusters_router
 from src.api.v1.peers.router import router as peers_router
 from src.api.v1.deps.middlewares.auth import get_current_admin
-
+from src.services.scheduler import scheduler, start_scheduler, stop_scheduler
+from src.services.tasks.cleanup_clients import cleanup_expired_clients
+from src.management.settings import get_settings
 
 logger = configure_logger("MAIN", "cyan")
+settings = get_settings()
 
 
 def run_migrations():
@@ -27,23 +28,24 @@ def run_migrations():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     run_migrations()
-    logger.info("Connecting to Redis...")
-    await connect_redis()
-    logger.info("Redis connected successfully.")
-    logger.info("Connecting to MinIO...")
-    await connect_minio()
-    logger.info("MinIO connected successfully.")
     logger.info("Creating default admin user...")
     await create_default_admin_user()
-    logger.info("Default admin user created successfully.")
-    logger.info("Initialization completed successfully.")
+
+    scheduler.add_job(
+        cleanup_expired_clients,
+        trigger="cron",
+        hour=settings.cleanup_schedule_hour,
+        minute=settings.cleanup_schedule_minute,
+        id="cleanup_expired_clients",
+        replace_existing=True,
+    )
+    start_scheduler()
+
+    logger.info("Application initialized successfully.")
     yield
-    logger.info("Disconnecting from Redis...")
-    await disconnect_redis()
-    logger.info("Redis disconnected.")
-    logger.info("Disconnecting from MinIO...")
-    await disconnect_minio()
-    logger.info("MinIO disconnected.")
+
+    stop_scheduler()
+    logger.info("Application shutdown complete.")
 
 
 app = FastAPI(

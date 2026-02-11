@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
 
+    peer_status_ttl: int = 120
+    cluster_api_timeout: int = 10
+    timezone: str = "Europe/Moscow"
+    cleanup_schedule_hour: int = 3
+    cleanup_schedule_minute: int = 0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
