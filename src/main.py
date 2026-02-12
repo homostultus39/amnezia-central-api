@@ -7,7 +7,7 @@ from src.management.logger import configure_logger
 from src.database.management.default.admin_data import create_default_admin_user
 from src.api.v1.auth.router import router as auth_router
 from src.api.v1.clients.router import router as clients_router
-from src.api.v1.clusters.router import router as clusters_router
+from src.api.v1.clusters.router import router as clusters_router, sync_router as clusters_sync_router
 from src.api.v1.peers.router import router as peers_router
 from src.api.v1.deps.middlewares.auth import get_current_admin
 from src.services.scheduler import scheduler, start_scheduler, stop_scheduler
@@ -56,7 +56,6 @@ app = FastAPI(
     swagger_ui_parameters={"persistAuthorization": True},
 )
 
-# Include routers
 app.include_router(
     auth_router,
     prefix="/auth",
@@ -75,6 +74,12 @@ app.include_router(
     prefix="/clusters",
     tags=["Clusters"],
     dependencies=[Depends(get_current_admin)]
+)
+
+app.include_router(
+    clusters_sync_router,
+    prefix="/clusters",
+    tags=["Clusters"]
 )
 
 app.include_router(
