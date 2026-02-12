@@ -51,6 +51,11 @@ class ClusterModel(Base, UUIDMixin, TimestampMixin):
     api_key: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
     last_handshake: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    container_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    container_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    protocol: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    peers_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    online_peers_count: Mapped[int] = mapped_column(nullable=False, default=0)
 
     peers: Mapped[list["PeerModel"]] = relationship("PeerModel", back_populates="cluster", cascade="all, delete-orphan", uselist=True)
 

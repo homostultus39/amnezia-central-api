@@ -80,3 +80,44 @@ async def update_last_handshake(session: AsyncSession, cluster_id: uuid.UUID) ->
     cluster.last_handshake = datetime.now(timezone.utc)
     await session.commit()
     return True
+
+
+async def update_cluster_runtime(
+    session: AsyncSession,
+    cluster_id: uuid.UUID,
+    container_name: str | None,
+    container_status: str | None,
+    protocol: str | None,
+    peers_count: int,
+    online_peers_count: int,
+) -> bool:
+    cluster = await get_cluster_by_id(session, cluster_id)
+    if not cluster:
+        return False
+
+    changed = False
+
+    if cluster.container_name != container_name:
+        cluster.container_name = container_name
+        changed = True
+
+    if cluster.container_status != container_status:
+        cluster.container_status = container_status
+        changed = True
+
+    if cluster.protocol != protocol:
+        cluster.protocol = protocol
+        changed = True
+
+    if cluster.peers_count != peers_count:
+        cluster.peers_count = peers_count
+        changed = True
+
+    if cluster.online_peers_count != online_peers_count:
+        cluster.online_peers_count = online_peers_count
+        changed = True
+
+    if changed:
+        await session.commit()
+
+    return changed

@@ -20,7 +20,7 @@ class PeerStatusUpdate(BaseModel):
     public_key: str
     endpoint: str
     allowed_ips: list[str]
-    last_handshake: datetime
+    last_handshake: datetime | None
     rx_bytes: int
     tx_bytes: int
     online: bool
@@ -36,6 +36,8 @@ class ServerTrafficUpdate(BaseModel):
 
 class ClusterSyncRequest(BaseModel):
     protocol: str
+    container_name: str | None = None
+    container_status: str | None = None
     peers: list[PeerStatusUpdate]
     server_traffic: ServerTrafficUpdate
     sync_timestamp: datetime
@@ -58,8 +60,8 @@ class ClusterWithStatusResponse(ClusterResponse):
     container_status: str | None = None
     container_name: str | None = None
     protocol: str | None = None
-    peers_count: int | None = None
-    online_peers_count: int | None = None
+    peers_count: int = 0
+    online_peers_count: int = 0
 
 
 class RestartClusterResponse(BaseModel):

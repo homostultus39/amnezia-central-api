@@ -6,7 +6,6 @@ from src.database.connection import SessionDep
 from src.database.management.operations.cluster import (
     get_cluster_by_id,
     get_all_clusters,
-    update_last_handshake,
 )
 from src.api.v1.clusters.logger import logger
 from src.api.v1.clusters.crud.management.cluster_status import enrich_cluster_status
@@ -49,7 +48,6 @@ async def get_cluster(
             raise ClusterNotFoundException()
 
         response = ClusterWithStatusResponse.model_validate(cluster)
-        await update_last_handshake(session, cluster_id)
         await enrich_cluster_status(response, cluster_id)
 
         logger.info(f"Retrieved cluster: {cluster.name}")

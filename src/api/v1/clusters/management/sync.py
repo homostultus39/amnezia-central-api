@@ -4,10 +4,15 @@ from fastapi import APIRouter, Header, HTTPException, status
 from datetime import datetime, timezone
 
 from src.database.connection import SessionDep
-from src.database.management.operations.cluster import get_cluster_by_id, update_last_handshake
+from src.database.management.operations.cluster import (
+    get_cluster_by_id,
+    update_cluster_runtime,
+    update_last_handshake,
+)
 from src.api.v1.clusters.logger import logger
 from src.api.v1.clusters.schemas import ClusterSyncRequest, ClusterSyncResponse
 from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException, ClusterAuthException
+from src.api.v1.management.http_client import ClusterAPIClient
 from src.redis.management.cluster_status import ClusterStatusCache
 
 router = APIRouter()
@@ -34,7 +39,19 @@ async def sync_cluster(
         await update_last_handshake(session, cluster_id)
 
         cluster_id_str = str(cluster_id)
-        await cache.save_protocol(cluster_id_str, payload.protocol)
+        runtime_protocol = payload.protocol
+        runtime_container_name = payload.container_name or cluster.container_name
+        runtime_container_status = payload.container_status or cluster.container_status
+
+        if runtime_container_name is None or runtime_container_status is None:
+            try:
+                client = ClusterAPIClient(cluster.endpoint, cluster.api_key)
+                server_status = await client.get_server_status()
+                runtime_container_name = runtime_container_name or server_status.get("container_name")
+                runtime_container_status = runtime_container_status or server_status.get("status")
+                runtime_protocol = server_status.get("protocol") or runtime_protocol
+            except Exception as exc:
+                logger.warning(f"Failed to fetch server status for cluster {cluster.name}: {exc}")
 
         traffic_data = {
             "total_rx_bytes": payload.server_traffic.total_rx_bytes,
@@ -42,24 +59,40 @@ async def sync_cluster(
             "total_peers": payload.server_traffic.total_peers,
             "online_peers": payload.server_traffic.online_peers,
         }
-        await cache.save_traffic(cluster_id_str, traffic_data)
+        db_runtime_changed = await update_cluster_runtime(
+            session=session,
+            cluster_id=cluster_id,
+            container_name=runtime_container_name,
+            container_status=runtime_container_status,
+            protocol=runtime_protocol,
+            peers_count=payload.server_traffic.total_peers,
+            online_peers_count=payload.server_traffic.online_peers,
+        )
+        protocol_cache_changed = await cache.save_protocol_if_changed(cluster_id_str, runtime_protocol)
+        traffic_cache_changed = await cache.save_traffic_if_changed(cluster_id_str, traffic_data)
 
+        peer_cache_updates = 0
         for peer in payload.peers:
             peer_data = {
                 "public_key": peer.public_key,
                 "endpoint": peer.endpoint,
                 "allowed_ips": peer.allowed_ips,
-                "last_handshake": peer.last_handshake.isoformat(),
+                "last_handshake": peer.last_handshake.isoformat() if peer.last_handshake else None,
                 "rx_bytes": peer.rx_bytes,
                 "tx_bytes": peer.tx_bytes,
                 "online": peer.online,
                 "persistent_keepalive": peer.persistent_keepalive,
             }
-            await cache.save_peer_status(cluster_id_str, peer.public_key, peer_data)
+            if await cache.save_peer_status_if_changed(cluster_id_str, peer.public_key, peer_data):
+                peer_cache_updates += 1
 
         logger.info(
             f"Synced cluster {cluster.name}: {payload.server_traffic.total_peers} peers, "
-            f"{payload.server_traffic.online_peers} online"
+            f"{payload.server_traffic.online_peers} online, "
+            f"db_runtime_changed={db_runtime_changed}, "
+            f"protocol_cache_changed={protocol_cache_changed}, "
+            f"traffic_cache_changed={traffic_cache_changed}, "
+            f"peer_cache_updates={peer_cache_updates}"
         )
 
         return ClusterSyncResponse(

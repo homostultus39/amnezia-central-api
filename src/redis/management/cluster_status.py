@@ -15,8 +15,24 @@ class ClusterStatusCache:
         key = f"cluster:{cluster_id}:peer:{public_key}:status"
 
         try:
-            await redis.setex(key, settings.peer_status_ttl, json.dumps(peer_data))
+            await redis.setex(key, settings.peer_status_ttl, json.dumps(peer_data, sort_keys=True))
             logger.debug(f"Saved peer status: {key}")
+        except Exception as e:
+            logger.error(f"Error saving peer status {key}: {e}")
+            raise
+
+    async def save_peer_status_if_changed(self, cluster_id: str, public_key: str, peer_data: dict[str, Any]) -> bool:
+        redis = await get_redis()
+        key = f"cluster:{cluster_id}:peer:{public_key}:status"
+
+        try:
+            payload = json.dumps(peer_data, sort_keys=True)
+            existing = await redis.get(key)
+            if existing == payload:
+                return False
+            await redis.setex(key, settings.peer_status_ttl, payload)
+            logger.debug(f"Saved peer status: {key}")
+            return True
         except Exception as e:
             logger.error(f"Error saving peer status {key}: {e}")
             raise
@@ -61,8 +77,24 @@ class ClusterStatusCache:
         key = f"cluster:{cluster_id}:traffic"
 
         try:
-            await redis.setex(key, settings.peer_status_ttl, json.dumps(traffic_data))
+            await redis.setex(key, settings.peer_status_ttl, json.dumps(traffic_data, sort_keys=True))
             logger.debug(f"Saved traffic stats: {key}")
+        except Exception as e:
+            logger.error(f"Error saving traffic stats {key}: {e}")
+            raise
+
+    async def save_traffic_if_changed(self, cluster_id: str, traffic_data: dict[str, Any]) -> bool:
+        redis = await get_redis()
+        key = f"cluster:{cluster_id}:traffic"
+
+        try:
+            payload = json.dumps(traffic_data, sort_keys=True)
+            existing = await redis.get(key)
+            if existing == payload:
+                return False
+            await redis.setex(key, settings.peer_status_ttl, payload)
+            logger.debug(f"Saved traffic stats: {key}")
+            return True
         except Exception as e:
             logger.error(f"Error saving traffic stats {key}: {e}")
             raise
@@ -87,6 +119,21 @@ class ClusterStatusCache:
         try:
             await redis.setex(key, settings.peer_status_ttl, protocol)
             logger.debug(f"Saved protocol: {key}")
+        except Exception as e:
+            logger.error(f"Error saving protocol {key}: {e}")
+            raise
+
+    async def save_protocol_if_changed(self, cluster_id: str, protocol: str) -> bool:
+        redis = await get_redis()
+        key = f"cluster:{cluster_id}:protocol"
+
+        try:
+            existing = await redis.get(key)
+            if existing == protocol:
+                return False
+            await redis.setex(key, settings.peer_status_ttl, protocol)
+            logger.debug(f"Saved protocol: {key}")
+            return True
         except Exception as e:
             logger.error(f"Error saving protocol {key}: {e}")
             raise
