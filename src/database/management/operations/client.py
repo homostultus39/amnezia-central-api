@@ -1,13 +1,14 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models import ClientModel
 
 
 async def get_client_by_id(session: AsyncSession, client_id: uuid.UUID) -> ClientModel | None:
     result = await session.execute(
-        select(ClientModel).where(ClientModel.id == client_id)
+        select(ClientModel).options(selectinload(ClientModel.peers)).where(ClientModel.id == client_id)
     )
     return result.scalar_one_or_none()
 
@@ -20,7 +21,7 @@ async def get_client_by_username(session: AsyncSession, username: str):
 
 
 async def get_all_clients(session: AsyncSession):
-    result = await session.execute(select(ClientModel))
+    result = await session.execute(select(ClientModel).options(selectinload(ClientModel.peers)))
     return result.scalars().all()
 
 

@@ -100,14 +100,15 @@ class ClusterAPIClient:
             logger.error(f"Error recreating peer on {self.endpoint}: {e}")
             raise ClusterAPIException(f"Failed to recreate peer: {str(e)}")
 
-    async def delete_peer(self, peer_id: uuid.UUID) -> dict[str, Any]:
-        url = f"{self.endpoint}/api/v1/peers/{peer_id}"
+    async def delete_peer(self, public_key: str) -> dict[str, Any]:
+        url = f"{self.endpoint}/api/v1/peers/"
+        payload = {"public_key": public_key}
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.delete(url, headers=self.headers)
+                response = await client.request("DELETE", url, headers=self.headers, json=payload)
                 response.raise_for_status()
-                logger.info(f"Peer {peer_id} deleted on {self.endpoint}")
+                logger.info(f"Peer {public_key} deleted on {self.endpoint}")
                 return response.json()
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error deleting peer on {self.endpoint}: {e}")

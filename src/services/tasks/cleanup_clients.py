@@ -4,7 +4,8 @@ from datetime import datetime
 from src.database.connection import async_sessionmaker
 from src.database.management.operations.client import get_all_clients, delete_client
 from src.database.management.operations.peer import get_peers_by_client_id
-from src.api.v1.clusters.management.http_client import ClusterAPIClient
+from src.database.management.operations.cluster import get_cluster_by_id
+from src.api.v1.management.http_client import ClusterAPIClient
 from src.management.logger import configure_logger
 from src.management.settings import get_settings
 
@@ -31,9 +32,13 @@ async def cleanup_expired_clients():
 
                     for peer in peers:
                         try:
-                            cluster_client = ClusterAPIClient(peer.cluster.endpoint, peer.cluster.api_key)
-                            await cluster_client.delete_peer(peer.id)
-                            logger.info(f"Peer deleted from cluster: {peer.public_key} on {peer.cluster.name}")
+                            cluster = await get_cluster_by_id(session, peer.cluster_id)
+                            if not cluster:
+                                logger.error(f"Cluster not found for peer {peer.id}: {peer.cluster_id}")
+                                continue
+                            cluster_client = ClusterAPIClient(cluster.endpoint, cluster.api_key)
+                            await cluster_client.delete_peer(peer.public_key)
+                            logger.info(f"Peer deleted from cluster: {peer.public_key} on {cluster.name}")
                         except Exception as e:
                             logger.error(f"Failed to delete peer {peer.id} from cluster: {e}")
 

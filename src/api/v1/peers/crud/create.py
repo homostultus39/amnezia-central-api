@@ -9,11 +9,12 @@ from src.api.v1.peers.schemas import CreatePeerRequest, PeerResponse, ClusterPee
 from src.api.v1.deps.exceptions.peer import PeerAlreadyExistsException
 from src.api.v1.deps.exceptions.client import ClientNotFoundException
 from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException
-from src.api.v1.clusters.management.http_client import ClusterAPIClient
+from src.api.v1.management.http_client import ClusterAPIClient
 from src.management.security import hash_password
-from src.database.models import AppType
+from src.minio import MinioClient
 
 router = APIRouter()
+minio_client = MinioClient()
 
 
 @router.post("/", response_model=PeerResponse)
@@ -33,7 +34,7 @@ async def create_peer_endpoint(
         try:
             cluster_client = ClusterAPIClient(cluster.endpoint, cluster.api_key)
             cluster_response = await cluster_client.create_peer(
-                app_type=payload.app_type,
+                app_type=payload.app_type.value,
                 protocol=payload.protocol,
             )
             peer_data = ClusterPeerResponse.model_validate(cluster_response)
@@ -60,12 +61,16 @@ async def create_peer_endpoint(
             private_key_hash=private_key_hash,
             allocated_ip=peer_data.allocated_ip,
             endpoint=peer_data.endpoint,
-            app_type=AppType(payload.app_type),
+            app_type=payload.app_type.value,
             protocol=payload.protocol,
         )
+        config_download_url = await minio_client.save_peer_config(peer.id, peer_data.config)
 
         logger.info(f"Peer created: {peer.public_key} ({peer.id})")
-        return PeerResponse.model_validate(peer)
+        response = PeerResponse.model_validate(peer)
+        response.config = peer_data.config
+        response.config_download_url = config_download_url
+        return response
 
     except (ClientNotFoundException, ClusterNotFoundException, PeerAlreadyExistsException):
         raise

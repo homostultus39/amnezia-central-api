@@ -2,6 +2,7 @@ import asyncio
 import io
 from datetime import timedelta
 from typing import Optional
+from uuid import UUID
 
 from minio.error import S3Error
 
@@ -66,6 +67,20 @@ class MinioClient:
         )
         logger.info(f"Bytes object '{object_name}' uploaded to '{self.bucket_name}'")
 
+    async def get_text(self, object_name: str, encoding: str = "utf-8") -> str:
+        await self._ensure_bucket()
+
+        def _read_object() -> bytes:
+            response = self._client.get_object(self.bucket_name, object_name)
+            try:
+                return response.read()
+            finally:
+                response.close()
+                response.release_conn()
+
+        data = await self._run(_read_object)
+        return data.decode(encoding)
+
     async def delete_object(self, object_name: str) -> None:
         await self._ensure_bucket()
         await self._run(self._client.remove_object, self.bucket_name, object_name)
@@ -76,7 +91,6 @@ class MinioClient:
         object_name: str,
         expires_seconds: Optional[int] = None,
     ) -> str:
-        await self._ensure_bucket()
         expires = timedelta(
             seconds=expires_seconds or settings.minio_presigned_expires_seconds
         )
@@ -97,3 +111,39 @@ class MinioClient:
         except S3Error:
             return False
         return True
+
+    @staticmethod
+    def _peer_config_key(peer_id: UUID) -> str:
+        return f"peers/{peer_id}.conf"
+
+    async def save_peer_config(self, peer_id: UUID, config: str) -> str:
+        object_name = self._peer_config_key(peer_id)
+        await self.upload_text(object_name, config, content_type="text/plain")
+        return await self.presigned_get_url(object_name)
+
+    async def get_peer_config(self, peer_id: UUID) -> str | None:
+        object_name = self._peer_config_key(peer_id)
+        try:
+            return await self.get_text(object_name)
+        except S3Error as exc:
+            if exc.code in {"NoSuchKey", "NoSuchObject"}:
+                return None
+            raise
+
+    async def get_peer_config_url(self, peer_id: UUID) -> str | None:
+        object_name = self._peer_config_key(peer_id)
+        try:
+            return await self.presigned_get_url(object_name)
+        except S3Error as exc:
+            if exc.code in {"NoSuchKey", "NoSuchObject"}:
+                return None
+            raise
+
+    async def delete_peer_config(self, peer_id: UUID) -> None:
+        object_name = self._peer_config_key(peer_id)
+        try:
+            await self.delete_object(object_name)
+        except S3Error as exc:
+            if exc.code in {"NoSuchKey", "NoSuchObject"}:
+                return
+            raise

@@ -2,24 +2,26 @@ import uuid
 from pydantic import BaseModel
 from datetime import datetime
 
+from src.database.models import AppType
+
 
 class CreatePeerRequest(BaseModel):
     cluster_id: uuid.UUID
     client_id: uuid.UUID
-    app_type: str
+    app_type: AppType
     protocol: str
 
 
 class ClusterPeerResponse(BaseModel):
-    """Response from cluster API when creating a peer"""
     public_key: str
     private_key: str
     allocated_ip: str
     endpoint: str
+    config: str
 
 
 class UpdatePeerRequest(BaseModel):
-    app_type: str | None = None
+    app_type: AppType | None = None
     protocol: str | None = None
 
 
@@ -34,6 +36,8 @@ class PeerResponse(BaseModel):
     protocol: str
     created_at: datetime
     updated_at: datetime
+    config: str | None = None
+    config_download_url: str | None = None
 
     class Config:
         from_attributes = True

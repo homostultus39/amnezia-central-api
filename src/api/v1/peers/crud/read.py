@@ -7,15 +7,22 @@ from src.database.management.operations.peer import get_peer_by_id, get_all_peer
 from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import PeerResponse
 from src.api.v1.deps.exceptions.peer import PeerNotFoundException
+from src.minio import MinioClient
 
 router = APIRouter()
+minio_client = MinioClient()
 
 
 @router.get("/", response_model=list[PeerResponse])
 async def list_peers(session: SessionDep) -> list[PeerResponse]:
     try:
         peers = await get_all_peers(session)
-        result = [PeerResponse.model_validate(peer) for peer in peers]
+        result = []
+        for peer in peers:
+            response = PeerResponse.model_validate(peer)
+            response.config = await minio_client.get_peer_config(peer.id)
+            response.config_download_url = await minio_client.get_peer_config_url(peer.id)
+            result.append(response)
 
         logger.info(f"Retrieved {len(result)} peers")
         return result
@@ -39,7 +46,10 @@ async def get_peer(
             raise PeerNotFoundException()
 
         logger.info(f"Retrieved peer: {peer.public_key}")
-        return PeerResponse.model_validate(peer)
+        response = PeerResponse.model_validate(peer)
+        response.config = await minio_client.get_peer_config(peer.id)
+        response.config_download_url = await minio_client.get_peer_config_url(peer.id)
+        return response
 
     except PeerNotFoundException:
         raise

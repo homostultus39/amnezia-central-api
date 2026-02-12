@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.database.models import PeerModel, AppType
+from src.database.models import PeerModel
 
 
 async def get_peer_by_id(session: AsyncSession, peer_id: uuid.UUID) -> PeerModel | None:
@@ -38,7 +38,7 @@ async def create_peer(
     private_key_hash: str,
     allocated_ip: str,
     endpoint: str,
-    app_type: AppType,
+    app_type: str,
     protocol: str
 ) -> PeerModel:
     peer = PeerModel(
@@ -64,7 +64,7 @@ async def update_peer(
     private_key_hash: str | None = None,
     allocated_ip: str | None = None,
     endpoint: str | None = None,
-    app_type: AppType | None = None,
+    app_type: str | None = None,
     protocol: str | None = None
 ) -> PeerModel | None:
     peer = await get_peer_by_id(session, peer_id)

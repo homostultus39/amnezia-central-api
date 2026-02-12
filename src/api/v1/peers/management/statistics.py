@@ -8,13 +8,15 @@ from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import PeerWithStatsResponse
 from src.api.v1.deps.exceptions.peer import PeerNotFoundException
 from src.redis.management.cluster_status import ClusterStatusCache
+from src.minio import MinioClient
 
 router = APIRouter()
 cache = ClusterStatusCache()
+minio_client = MinioClient()
 
 
 @router.get("/{peer_id}/statistics", response_model=PeerWithStatsResponse)
-async def get_peer_stats(
+async def get_peer_statistics(
     session: SessionDep,
     peer_id: UUID,
 ) -> PeerWithStatsResponse:
@@ -24,6 +26,8 @@ async def get_peer_stats(
             raise PeerNotFoundException()
 
         response = PeerWithStatsResponse.model_validate(peer)
+        response.config = await minio_client.get_peer_config(peer.id)
+        response.config_download_url = await minio_client.get_peer_config_url(peer.id)
 
         peer_status = await cache.get_peer_status(str(peer.cluster_id), peer.public_key)
         if peer_status:
@@ -36,14 +40,14 @@ async def get_peer_stats(
         else:
             logger.warning(f"No cached stats found for peer: {peer.public_key} in cluster: {peer.cluster_id}")
 
-        logger.info(f"Retrieved stats for peer: {peer.public_key}")
+        logger.info(f"Retrieved statistics for peer: {peer.public_key}")
         return response
 
     except PeerNotFoundException:
         raise
     except Exception as e:
-        logger.error(f"Error getting peer stats {peer_id}: {e}")
+        logger.error(f"Error getting peer statistics {peer_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get peer stats",
+            detail="Failed to get peer statistics",
         )
