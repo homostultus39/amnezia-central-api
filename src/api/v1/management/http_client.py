@@ -4,7 +4,7 @@ from typing import Any
 
 from src.management.logger import configure_logger
 from src.management.settings import get_settings
-from src.api.v1.deps.exceptions.cluster import ClusterAPIException
+from src.api.v1.management.exceptions.cluster import ClusterAPIException
 
 logger = configure_logger("ClusterAPIClient", "cyan")
 settings = get_settings()

@@ -4,7 +4,7 @@ import jwt
 
 from src.management.settings import get_settings
 from src.management.security import decode_token
-from src.api.v1.deps.exceptions.auth import InvalidTokenException, TokenNotProvidedException
+from src.api.v1.management.exceptions.auth import InvalidTokenException, TokenNotProvidedException
 from src.redis.client import RedisClient
 
 settings = get_settings()

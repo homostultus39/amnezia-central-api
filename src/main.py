@@ -9,7 +9,7 @@ from src.api.v1.auth.router import router as auth_router
 from src.api.v1.clients.router import router as clients_router
 from src.api.v1.clusters.router import router as clusters_router, sync_router as clusters_sync_router
 from src.api.v1.peers.router import router as peers_router
-from src.api.v1.deps.middlewares.auth import get_current_admin
+from src.api.v1.management.middlewares.auth import get_current_admin
 from src.services.scheduler import scheduler, start_scheduler, stop_scheduler
 from src.services.tasks.cleanup_clients import cleanup_expired_clients
 from src.management.settings import get_settings

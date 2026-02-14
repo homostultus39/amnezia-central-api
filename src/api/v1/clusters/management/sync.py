@@ -9,7 +9,7 @@ from src.database.management.operations.cluster import (
 )
 from src.api.v1.clusters.logger import logger
 from src.api.v1.clusters.schemas import ClusterSyncRequest, ClusterSyncResponse
-from src.api.v1.deps.exceptions.cluster import ClusterAuthException
+from src.api.v1.management.exceptions.cluster import ClusterAuthException
 from src.api.v1.management.http_client import ClusterAPIClient
 from src.redis.management.cluster_status import ClusterStatusCache
 

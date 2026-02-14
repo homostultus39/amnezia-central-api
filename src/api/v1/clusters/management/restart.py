@@ -6,7 +6,7 @@ from src.database.connection import SessionDep
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.clusters.logger import logger
 from src.api.v1.clusters.schemas import RestartClusterResponse
-from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException, ClusterAPIException
+from src.api.v1.management.exceptions.cluster import ClusterNotFoundException, ClusterAPIException
 from src.api.v1.management.http_client import ClusterAPIClient
 
 router = APIRouter()
