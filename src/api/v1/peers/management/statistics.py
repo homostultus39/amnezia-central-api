@@ -6,7 +6,7 @@ from src.database.connection import SessionDep
 from src.database.management.operations.peer import get_peer_by_id
 from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import PeerWithStatsResponse
-from src.api.v1.deps.exceptions.peer import PeerNotFoundException
+from src.api.v1.management.exceptions.peer import PeerNotFoundException
 from src.redis.management.cluster_status import ClusterStatusCache
 from src.minio import MinioClient
 

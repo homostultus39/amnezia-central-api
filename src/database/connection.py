@@ -2,7 +2,6 @@ from fastapi import Depends
 from typing import Annotated
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.database.base import Base
 from src.management.settings import get_settings
 
 

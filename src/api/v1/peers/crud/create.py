@@ -6,9 +6,9 @@ from src.database.management.operations.client import get_client_by_id
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import CreatePeerRequest, PeerResponse, ClusterPeerResponse
-from src.api.v1.deps.exceptions.peer import PeerAlreadyExistsException
-from src.api.v1.deps.exceptions.client import ClientNotFoundException
-from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException
+from src.api.v1.management.exceptions.peer import PeerAlreadyExistsException
+from src.api.v1.management.exceptions.client import ClientNotFoundException
+from src.api.v1.management.exceptions.cluster import ClusterNotFoundException
 from src.api.v1.management.http_client import ClusterAPIClient
 from src.management.security import hash_password
 from src.minio import MinioClient

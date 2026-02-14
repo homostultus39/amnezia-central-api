@@ -1,6 +1,5 @@
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 
 from src.management.logger import configure_logger
 from src.management.settings import get_settings

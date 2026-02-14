@@ -10,7 +10,7 @@ from src.database.management.operations.cluster import (
 from src.api.v1.clusters.logger import logger
 from src.api.v1.clusters.crud.management.cluster_status import enrich_cluster_status
 from src.api.v1.clusters.schemas import ClusterWithStatusResponse
-from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException
+from src.api.v1.management.exceptions.cluster import ClusterNotFoundException
 
 router = APIRouter()
 

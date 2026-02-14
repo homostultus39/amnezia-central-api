@@ -6,7 +6,7 @@ from src.database.connection import SessionDep
 from src.database.management.operations.client import get_client_by_id, get_all_clients
 from src.api.v1.clients.logger import logger
 from src.api.v1.clients.schemas import ClientWithPeersResponse
-from src.api.v1.deps.exceptions.client import ClientNotFoundException
+from src.api.v1.management.exceptions.client import ClientNotFoundException
 
 router = APIRouter()
 

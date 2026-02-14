@@ -7,7 +7,7 @@ from src.database.management.operations.client import get_client_by_id, delete_c
 from src.database.management.operations.peer import get_peers_by_client_id
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.clients.logger import logger
-from src.api.v1.deps.exceptions.client import ClientNotFoundException
+from src.api.v1.management.exceptions.client import ClientNotFoundException
 from src.api.v1.management.http_client import ClusterAPIClient
 
 router = APIRouter()

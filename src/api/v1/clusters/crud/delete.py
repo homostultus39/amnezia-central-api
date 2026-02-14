@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from src.database.connection import SessionDep
 from src.database.management.operations.cluster import get_cluster_by_id, delete_cluster
 from src.api.v1.clusters.logger import logger
-from src.api.v1.deps.exceptions.cluster import ClusterNotFoundException
+from src.api.v1.management.exceptions.cluster import ClusterNotFoundException
 from src.redis.management.cluster_status import ClusterStatusCache
 
 router = APIRouter()

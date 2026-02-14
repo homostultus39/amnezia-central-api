@@ -7,8 +7,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.management.settings import get_settings
 from src.api.v1.auth.schemas import LoginRequest, TokenResponse, LogoutResponseSchema
-from src.api.v1.deps.exceptions.auth import InvalidCredentialsException, InvalidTokenException
-from src.api.v1.deps.middlewares.auth import bearer_scheme, get_current_admin
+from src.api.v1.management.exceptions.auth import InvalidCredentialsException, InvalidTokenException
+from src.api.v1.management.middlewares.auth import bearer_scheme, get_current_admin
 from src.database.connection import SessionDep
 from src.database.models import AdminModel, UserStatus
 from src.management.logger import configure_logger

@@ -7,7 +7,7 @@ from src.database.management.operations.peer import get_peer_by_id, update_peer
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import UpdatePeerRequest, PeerResponse, ClusterPeerResponse
-from src.api.v1.deps.exceptions.peer import PeerNotFoundException
+from src.api.v1.management.exceptions.peer import PeerNotFoundException
 from src.api.v1.management.http_client import ClusterAPIClient
 from src.management.security import hash_password
 from src.minio import MinioClient
