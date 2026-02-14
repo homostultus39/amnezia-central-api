@@ -19,6 +19,13 @@ async def get_cluster_by_name(session: AsyncSession, name: str) -> ClusterModel 
     return result.scalar_one_or_none()
 
 
+async def get_cluster_by_api_key(session: AsyncSession, api_key: str) -> ClusterModel | None:
+    result = await session.execute(
+        select(ClusterModel).where(ClusterModel.api_key == api_key)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_all_clusters(session: AsyncSession) -> list[ClusterModel]:
     result = await session.execute(select(ClusterModel))
     return result.scalars().all()

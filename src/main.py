@@ -53,6 +53,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
     root_path="/api/v1",
+    docs_url="/docs" if settings.development else None,
+    redoc_url="/redoc" if settings.development else None,
+    openapi_url="/openapi.json" if settings.development else None,
     swagger_ui_parameters={"persistAuthorization": True},
 )
 
