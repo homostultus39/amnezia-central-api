@@ -1,0 +1,49 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Environment (will be passed via env_file in docker-compose)
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# MinIO local data
+.minio/
+
+# Redis dump
+dump.rdb
+
+# Docker
+docker-compose.yml
+docker-compose.override.yml
+Dockerfile
+
+# Development
+.claude/
+.ruff_cache/
+
+# IMPORTANT: Do NOT ignore migrations/versions/ - we need them in the image!
+# Unlike .gitignore, we want to include migration files in Docker
