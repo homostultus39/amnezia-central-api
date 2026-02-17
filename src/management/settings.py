@@ -41,6 +41,17 @@ class Settings(BaseSettings):
     cleanup_schedule_hour: int = 3
     cleanup_schedule_minute: int = 0
 
+    payment_provider: str = "rukassa"
+    rukassa_api_key: str | None = None
+    rukassa_shop_id: str | None = None
+    rukassa_api_url: str | None = None
+    yookassa_shop_id: str | None = None
+    yookassa_secret_key: str | None = None
+
+    subscription_enabled: bool = True
+    trial_enabled: bool = True
+    trial_period_days: int = 1
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

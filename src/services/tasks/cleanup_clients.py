@@ -2,12 +2,13 @@ import pytz
 from datetime import datetime
 
 from src.database.connection import async_sessionmaker
-from src.database.management.operations.client import get_all_clients, delete_client
+from src.database.management.operations.client import get_all_clients
 from src.database.management.operations.peer import get_peers_by_client_id
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.management.http_client import ClusterAPIClient
 from src.management.logger import configure_logger
 from src.management.settings import get_settings
+from src.database.models import SubscriptionStatus
 
 logger = configure_logger("CLEANUP_TASK", "red")
 settings = get_settings()
@@ -25,8 +26,8 @@ async def cleanup_expired_clients():
             expired_count = 0
 
             for client in clients:
-                if client.expires_at.astimezone(tz) < now:
-                    logger.info(f"Client expired: {client.username} (expires_at: {client.expires_at})")
+                if client.expires_at.astimezone(tz) < now and client.subscription_status != SubscriptionStatus.EXPIRED.value:
+                    logger.info(f"Client subscription expired: {client.username} (expires_at: {client.expires_at})")
 
                     peers = await get_peers_by_client_id(session, client.id)
 
@@ -42,11 +43,23 @@ async def cleanup_expired_clients():
                         except Exception as e:
                             logger.error(f"Failed to delete peer {peer.id} from cluster: {e}")
 
-                    await delete_client(session, client.id)
-                    logger.info(f"Client deleted: {client.username} ({client.id})")
+                        try:
+                            await session.delete(peer)
+                        except Exception as e:
+                            logger.error(f"Failed to delete peer {peer.id} from database: {e}")
+
+                    if client.subscription_status == SubscriptionStatus.TRIAL.value:
+                        client.trial_used = True
+
+                    client.subscription_status = SubscriptionStatus.EXPIRED.value
+
+                    await session.commit()
+                    await session.refresh(client)
+
+                    logger.info(f"Client subscription expired and peers deleted: {client.username} ({client.id})")
                     expired_count += 1
 
-            logger.info(f"Cleanup completed. Deleted {expired_count} expired clients")
+            logger.info(f"Cleanup completed. Processed {expired_count} expired clients")
 
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")

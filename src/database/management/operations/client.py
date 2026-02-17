@@ -1,9 +1,14 @@
 import uuid
-from datetime import datetime
+import pytz
+from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.database.models import ClientModel
+from src.database.models import ClientModel, SubscriptionStatus
+from src.database.management.operations.tariff import get_tariff_by_code
+from src.management.settings import get_settings
+
+settings = get_settings()
 
 
 async def get_client_by_id(session: AsyncSession, client_id: uuid.UUID) -> ClientModel | None:
@@ -27,12 +32,26 @@ async def get_all_clients(session: AsyncSession):
 
 async def create_client(
     session: AsyncSession,
-    username: str,
-    expires_at: datetime
+    username: str
 ) -> ClientModel:
+    tz = pytz.timezone(settings.timezone)
+    now = datetime.now(tz)
+
+    if settings.trial_enabled:
+        expires_at = now + timedelta(days=settings.trial_period_days)
+        subscription_status = SubscriptionStatus.TRIAL.value
+        trial_used = False
+    else:
+        expires_at = now
+        subscription_status = SubscriptionStatus.EXPIRED.value
+        trial_used = True
+
     client = ClientModel(
         username=username,
-        expires_at=expires_at
+        expires_at=expires_at,
+        subscription_status=subscription_status,
+        trial_used=trial_used,
+        last_subscription_at=None
     )
     session.add(client)
     await session.commit()
@@ -50,6 +69,74 @@ async def update_client(
         return None
 
     client.expires_at = expires_at
+    await session.commit()
+    await session.refresh(client)
+    return client
+
+
+async def update_client_subscription_status(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    status: SubscriptionStatus
+) -> ClientModel | None:
+    client = await get_client_by_id(session, client_id)
+    if not client:
+        return None
+
+    client.subscription_status = status.value
+    await session.commit()
+    await session.refresh(client)
+    return client
+
+
+async def subscribe_client(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    tariff_code: str
+) -> ClientModel:
+    if not settings.subscription_enabled:
+        raise ValueError("Subscriptions are disabled")
+
+    client = await get_client_by_id(session, client_id)
+    if not client:
+        raise ValueError(f"Client with id {client_id} not found")
+
+    tariff = await get_tariff_by_code(session, tariff_code)
+    if not tariff or not tariff.is_active:
+        raise ValueError(f"Tariff {tariff_code} is not available")
+
+    tz = pytz.timezone(settings.timezone)
+    now = datetime.now(tz)
+    days = tariff.days
+
+    if client.subscription_status == SubscriptionStatus.ACTIVE.value and client.expires_at > now:
+        new_expires_at = client.expires_at + timedelta(days=days)
+    else:
+        new_expires_at = now + timedelta(days=days)
+        if client.subscription_status == SubscriptionStatus.TRIAL.value:
+            client.trial_used = True
+
+    client.subscription_status = SubscriptionStatus.ACTIVE.value
+    client.expires_at = new_expires_at
+    client.last_subscription_at = now
+
+    await session.commit()
+    await session.refresh(client)
+    return client
+
+
+async def expire_client_subscription(
+    session: AsyncSession,
+    client_id: uuid.UUID
+) -> ClientModel | None:
+    client = await get_client_by_id(session, client_id)
+    if not client:
+        return None
+
+    client.subscription_status = SubscriptionStatus.EXPIRED.value
+    if client.subscription_status == SubscriptionStatus.TRIAL.value:
+        client.trial_used = True
+
     await session.commit()
     await session.refresh(client)
     return client

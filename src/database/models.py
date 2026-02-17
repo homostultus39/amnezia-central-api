@@ -35,6 +35,12 @@ class UserStatus(Enum):
     REVOKED = "revoked"
 
 
+class SubscriptionStatus(Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    EXPIRED = "expired"
+
+
 class AdminModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "admins"
 
@@ -65,6 +71,10 @@ class ClientModel(Base, UUIDMixin, TimestampMixin):
 
     username: Mapped[str] = mapped_column(String(255), index=True, unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    subscription_status: Mapped[SubscriptionStatus] = mapped_column(String(50), default=SubscriptionStatus.TRIAL.value, nullable=False)
+    trial_used: Mapped[bool] = mapped_column(nullable=False, default=False)
+    last_subscription_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     peers: Mapped[list["PeerModel"]] = relationship("PeerModel", back_populates="client", cascade="all, delete-orphan", uselist=True)
 
 
@@ -87,3 +97,15 @@ class PeerModel(Base, UUIDMixin, TimestampMixin):
 
     client: Mapped["ClientModel"] = relationship("ClientModel", back_populates="peers")
     cluster: Mapped["ClusterModel"] = relationship("ClusterModel", back_populates="peers")
+
+
+class TariffModel(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "tariffs"
+
+    code: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    days: Mapped[int] = mapped_column(nullable=False)
+    price_rub: Mapped[int] = mapped_column(nullable=False)
+    price_stars: Mapped[int] = mapped_column(nullable=False)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    sort_order: Mapped[int] = mapped_column(nullable=False, default=0, index=True)
