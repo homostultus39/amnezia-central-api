@@ -37,7 +37,11 @@ async def create_client(
     tz = pytz.timezone(settings.timezone)
     now = datetime.now(tz)
 
-    if settings.trial_enabled:
+    if not settings.subscription_enabled:
+        expires_at = None
+        subscription_status = SubscriptionStatus.ACTIVE.value
+        trial_used = False
+    elif settings.trial_enabled:
         expires_at = now + timedelta(days=settings.trial_period_days)
         subscription_status = SubscriptionStatus.TRIAL.value
         trial_used = False

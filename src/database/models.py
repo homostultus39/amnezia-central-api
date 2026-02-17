@@ -70,7 +70,7 @@ class ClientModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "clients"
 
     username: Mapped[str] = mapped_column(String(255), index=True, unique=True, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     subscription_status: Mapped[SubscriptionStatus] = mapped_column(String(50), default=SubscriptionStatus.TRIAL.value, nullable=False)
     trial_used: Mapped[bool] = mapped_column(nullable=False, default=False)
     last_subscription_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

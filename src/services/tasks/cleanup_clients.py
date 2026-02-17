@@ -15,6 +15,10 @@ settings = get_settings()
 
 
 async def cleanup_expired_clients():
+    if not settings.subscription_enabled:
+        logger.info("Subscription system is disabled, skipping cleanup")
+        return
+
     logger.info("Starting cleanup of expired clients")
 
     async with async_sessionmaker() as session:
@@ -26,6 +30,9 @@ async def cleanup_expired_clients():
             expired_count = 0
 
             for client in clients:
+                if client.expires_at is None:
+                    continue
+
                 if client.expires_at.astimezone(tz) < now and client.subscription_status != SubscriptionStatus.EXPIRED.value:
                     logger.info(f"Client subscription expired: {client.username} (expires_at: {client.expires_at})")
 

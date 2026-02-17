@@ -32,14 +32,19 @@ async def lifespan(app: FastAPI):
     logger.info("Creating default admin user...")
     await create_default_admin_user()
 
-    scheduler.add_job(
-        cleanup_expired_clients,
-        trigger="cron",
-        hour=settings.cleanup_schedule_hour,
-        minute=settings.cleanup_schedule_minute,
-        id="cleanup_expired_clients",
-        replace_existing=True,
-    )
+    if settings.subscription_enabled:
+        scheduler.add_job(
+            cleanup_expired_clients,
+            trigger="cron",
+            hour=settings.cleanup_schedule_hour,
+            minute=settings.cleanup_schedule_minute,
+            id="cleanup_expired_clients",
+            replace_existing=True,
+        )
+        logger.info("Cleanup scheduler registered")
+    else:
+        logger.info("Subscription system is disabled, cleanup scheduler skipped")
+
     start_scheduler()
 
     logger.info("Application initialized successfully.")
