@@ -2,7 +2,7 @@ import uuid
 from enum import Enum
 from datetime import datetime
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import func, String, DateTime, UUID, ForeignKey
+from sqlalchemy import func, String, DateTime, UUID, ForeignKey, UniqueConstraint
 
 from src.database.base import Base
 
@@ -85,6 +85,9 @@ class AppType(Enum):
 
 class PeerModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "peers"
+    __table_args__ = (
+        UniqueConstraint("client_id", "cluster_id", "app_type", name="uq_peer_client_cluster_apptype"),
+    )
 
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), nullable=False, index=True)
     cluster_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clusters.id"), nullable=False, index=True)

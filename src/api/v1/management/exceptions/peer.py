@@ -15,3 +15,11 @@ class PeerAlreadyExistsException(HTTPException):
             status_code=status.HTTP_409_CONFLICT,
             detail="Peer with this public key already exists",
         )
+
+
+class PeerDuplicateAppTypeException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Peer with this app_type already exists for this client on this cluster",
+        )

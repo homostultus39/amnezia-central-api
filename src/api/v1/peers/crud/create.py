@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
 
 from src.database.connection import SessionDep
-from src.database.management.operations.peer import get_peer_by_public_key, create_peer
+from src.database.management.operations.peer import get_peer_by_public_key, get_peer_by_client_cluster_apptype, create_peer
 from src.database.management.operations.client import get_client_by_id
 from src.database.management.operations.cluster import get_cluster_by_id
 from src.api.v1.peers.logger import logger
 from src.api.v1.peers.schemas import CreatePeerRequest, PeerResponse, ClusterPeerResponse
-from src.api.v1.management.exceptions.peer import PeerAlreadyExistsException
+from src.api.v1.management.exceptions.peer import PeerAlreadyExistsException, PeerDuplicateAppTypeException
 from src.api.v1.management.exceptions.client import ClientNotFoundException
 from src.api.v1.management.exceptions.cluster import ClusterNotFoundException
 from src.api.v1.management.http_client import ClusterAPIClient
@@ -30,6 +30,16 @@ async def create_peer_endpoint(
         cluster = await get_cluster_by_id(session, payload.cluster_id)
         if not cluster:
             raise ClusterNotFoundException()
+
+        existing_by_apptype = await get_peer_by_client_cluster_apptype(
+            session, payload.client_id, payload.cluster_id, payload.app_type.value
+        )
+        if existing_by_apptype:
+            logger.warning(
+                f"Duplicate app_type peer: client={payload.client_id}, "
+                f"cluster={payload.cluster_id}, app_type={payload.app_type.value}"
+            )
+            raise PeerDuplicateAppTypeException()
 
         try:
             cluster_client = ClusterAPIClient(cluster.endpoint, cluster.api_key)
@@ -62,7 +72,7 @@ async def create_peer_endpoint(
             allocated_ip=peer_data.allocated_ip,
             endpoint=peer_data.endpoint,
             app_type=payload.app_type.value,
-            protocol=payload.protocol,
+            protocol=peer_data.protocol,
         )
         config_download_url = await minio_client.save_peer_config(peer.id, peer_data.config)
 
@@ -72,7 +82,7 @@ async def create_peer_endpoint(
         response.config_download_url = config_download_url
         return response
 
-    except (ClientNotFoundException, ClusterNotFoundException, PeerAlreadyExistsException):
+    except (ClientNotFoundException, ClusterNotFoundException, PeerAlreadyExistsException, PeerDuplicateAppTypeException):
         raise
     except HTTPException:
         raise

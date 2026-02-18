@@ -9,7 +9,7 @@ class CreatePeerRequest(BaseModel):
     cluster_id: uuid.UUID
     client_id: uuid.UUID
     app_type: AppType
-    protocol: str
+    protocol: str | None = None
 
 
 class ClusterPeerResponse(BaseModel):
@@ -18,11 +18,8 @@ class ClusterPeerResponse(BaseModel):
     allocated_ip: str
     endpoint: str
     config: str
+    protocol: str
 
-
-class UpdatePeerRequest(BaseModel):
-    app_type: AppType | None = None
-    protocol: str | None = None
 
 
 class PeerResponse(BaseModel):
