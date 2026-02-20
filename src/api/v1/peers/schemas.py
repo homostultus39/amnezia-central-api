@@ -40,9 +40,3 @@ class PeerResponse(BaseModel):
         from_attributes = True
 
 
-class PeerWithStatsResponse(PeerResponse):
-    last_handshake: datetime | None = None
-    rx_bytes: int | None = None
-    tx_bytes: int | None = None
-    online: bool | None = None
-    persistent_keepalive: int | None = None

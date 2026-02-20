@@ -10,6 +10,7 @@ from src.api.v1.clients.router import router as clients_router
 from src.api.v1.clusters.router import router as clusters_router, sync_router as clusters_sync_router
 from src.api.v1.peers.router import router as peers_router
 from src.api.v1.tariffs.router import router as tariffs_router
+from src.api.v1.statistics.router import router as statistics_router
 from src.api.v1.management.middlewares.auth import get_current_admin
 from src.services.scheduler import scheduler, start_scheduler, stop_scheduler
 from src.services.tasks.cleanup_clients import cleanup_expired_clients
@@ -102,6 +103,13 @@ app.include_router(
     tariffs_router,
     prefix="/tariffs",
     tags=["Tariffs"],
+    dependencies=[Depends(get_current_admin)]
+)
+
+app.include_router(
+    statistics_router,
+    prefix="/statistics",
+    tags=["Statistics"],
     dependencies=[Depends(get_current_admin)]
 )
 
