@@ -29,11 +29,9 @@ from src.api.v1.statistics.schemas import (
 from src.api.v1.management.exceptions.peer import PeerNotFoundException
 from src.api.v1.management.exceptions.cluster import ClusterNotFoundException
 from src.redis.management.cluster_status import ClusterStatusCache
-from src.minio import MinioClient
 
 router = APIRouter()
 cache = ClusterStatusCache()
-minio_client = MinioClient()
 
 
 @router.get("/", response_model=GlobalStatsResponse)
@@ -162,8 +160,6 @@ async def get_peer_statistics(
             raise PeerNotFoundException()
 
         response = PeerWithStatsResponse.model_validate(peer)
-        response.config = await minio_client.get_peer_config(peer.id)
-        response.config_download_url = await minio_client.get_peer_config_url(peer.id)
 
         peer_status = await cache.get_peer_status(str(peer.cluster_id), peer.public_key)
         if peer_status:
@@ -171,7 +167,6 @@ async def get_peer_statistics(
             response.rx_bytes = peer_status.get("rx_bytes")
             response.tx_bytes = peer_status.get("tx_bytes")
             response.online = peer_status.get("online")
-            response.persistent_keepalive = peer_status.get("persistent_keepalive")
             logger.debug(f"Enriched peer stats from cache: {peer.public_key}")
         else:
             logger.warning(f"No cached stats for peer: {peer.public_key}, cluster: {peer.cluster_id}")

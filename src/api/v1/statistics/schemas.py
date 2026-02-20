@@ -4,32 +4,22 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-# --- Peer statistics (moved from peers/schemas.py) ---
 
 class PeerWithStatsResponse(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
     cluster_id: uuid.UUID
-    public_key: str
-    allocated_ip: str
-    endpoint: str
-    app_type: str
     protocol: str
-    created_at: datetime
-    updated_at: datetime
-    config: Optional[str] = None
-    config_download_url: Optional[str] = None
+    app_type: str
     last_handshake: Optional[datetime] = None
     rx_bytes: Optional[int] = None
     tx_bytes: Optional[int] = None
     online: Optional[bool] = None
-    persistent_keepalive: Optional[int] = None
 
     class Config:
         from_attributes = True
 
 
-# --- Global statistics ---
 
 class ClustersStats(BaseModel):
     total: int
@@ -71,7 +61,6 @@ class GlobalStatsResponse(BaseModel):
     traffic: TrafficStats
 
 
-# --- Per-cluster statistics ---
 
 class ClusterInfo(BaseModel):
     id: uuid.UUID
