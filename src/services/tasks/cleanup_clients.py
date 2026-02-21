@@ -30,6 +30,9 @@ async def cleanup_expired_clients():
             expired_count = 0
 
             for client in clients:
+                if client.is_admin:
+                    continue
+
                 if client.expires_at is None:
                     continue
 

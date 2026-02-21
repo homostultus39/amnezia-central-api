@@ -5,6 +5,7 @@ from datetime import datetime
 
 class CreateClientRequest(BaseModel):
     username: str
+    is_admin: bool = False
 
 
 class UpdateClientRequest(BaseModel):
@@ -18,9 +19,10 @@ class SubscribeRequest(BaseModel):
 class ClientResponse(BaseModel):
     id: uuid.UUID
     username: str
-    expires_at: datetime
+    expires_at: datetime | None
     subscription_status: str
     trial_used: bool
+    is_admin: bool
     last_subscription_at: datetime | None
     created_at: datetime
     updated_at: datetime

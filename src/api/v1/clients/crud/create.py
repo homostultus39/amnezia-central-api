@@ -24,7 +24,8 @@ async def create_client_endpoint(
 
         client = await create_client(
             session,
-            username=payload.username
+            username=payload.username,
+            is_admin=payload.is_admin
         )
 
         logger.info(f"Client created: {client.username} ({client.id})")

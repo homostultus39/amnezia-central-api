@@ -74,6 +74,7 @@ class ClientModel(Base, UUIDMixin, TimestampMixin):
     subscription_status: Mapped[SubscriptionStatus] = mapped_column(String(50), default=SubscriptionStatus.TRIAL.value, nullable=False)
     trial_used: Mapped[bool] = mapped_column(nullable=False, default=False)
     last_subscription_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_admin: Mapped[bool] = mapped_column(nullable=False, default=False, server_default='false')
 
     peers: Mapped[list["PeerModel"]] = relationship("PeerModel", back_populates="client", cascade="all, delete-orphan", uselist=True)
 

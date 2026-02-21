@@ -32,12 +32,17 @@ async def get_all_clients(session: AsyncSession):
 
 async def create_client(
     session: AsyncSession,
-    username: str
+    username: str,
+    is_admin: bool = False
 ) -> ClientModel:
     tz = pytz.timezone(settings.timezone)
     now = datetime.now(tz)
 
-    if not settings.subscription_enabled:
+    if is_admin:
+        expires_at = None
+        subscription_status = SubscriptionStatus.ACTIVE.value
+        trial_used = False
+    elif not settings.subscription_enabled:
         expires_at = None
         subscription_status = SubscriptionStatus.ACTIVE.value
         trial_used = False
@@ -55,7 +60,8 @@ async def create_client(
         expires_at=expires_at,
         subscription_status=subscription_status,
         trial_used=trial_used,
-        last_subscription_at=None
+        last_subscription_at=None,
+        is_admin=is_admin
     )
     session.add(client)
     await session.commit()
