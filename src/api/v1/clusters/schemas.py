@@ -18,7 +18,7 @@ class UpdateClusterRequest(BaseModel):
 
 class PeerStatusUpdate(BaseModel):
     public_key: str
-    endpoint: str
+    endpoint: str | None
     allowed_ips: list[str]
     last_handshake: datetime | None
     rx_bytes: int

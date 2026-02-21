@@ -1,7 +1,7 @@
 import pytz
 from datetime import datetime
 
-from src.database.connection import async_sessionmaker
+from src.database.connection import sessionmaker
 from src.database.management.operations.client import get_all_clients
 from src.database.management.operations.peer import get_peers_by_client_id
 from src.database.management.operations.cluster import get_cluster_by_id
@@ -21,7 +21,7 @@ async def cleanup_expired_clients():
 
     logger.info("Starting cleanup of expired clients")
 
-    async with async_sessionmaker() as session:
+    async with sessionmaker() as session:
         try:
             clients = await get_all_clients(session)
             tz = pytz.timezone(settings.timezone)
